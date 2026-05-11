@@ -38,8 +38,9 @@ if [[ -f "$CONF_FILE" ]]; then
     source "$CONF_FILE"
 fi
 
-# Ensure data directory
+# Ensure data directory (700 = owner only — security-sensitive data)
 mkdir -p "$SENTINEL_DIR"
+chmod 700 "$SENTINEL_DIR" 2>/dev/null || true
 
 # ----------------------------------------------------------------------------
 # COLORS & OUTPUT
@@ -92,7 +93,9 @@ alert() {
 
     if [[ "$ALERT_METHOD" == *"notify"* ]]; then
         if command -v osascript &>/dev/null; then
-            osascript -e "display notification \"$msg\" with title \"Sentinel [$level]\""
+            # Escape quotes to prevent AppleScript injection
+            local safe_msg="${msg//\"/\\\"}"
+            osascript -e "display notification \"${safe_msg}\" with title \"Sentinel [${level}]\""
         fi
     fi
 }
@@ -143,7 +146,7 @@ cmd_report() {
     # Run each module and count results
     # We capture output and parse for [FAIL] [WARN] [PASS]
     local output
-    for module in firewall portcheck connwatch audit; do
+    for module in firewall portcheck connwatch immune audit; do
         if [[ -f "$MODULES_DIR/${module}.sh" ]]; then
             output="$(bash "$MODULES_DIR/${module}.sh" report 2>&1)" || true
             echo "$output"
@@ -350,6 +353,7 @@ main() {
         connections)   bash "$MODULES_DIR/connwatch.sh" ;;
         firewall)      bash "$MODULES_DIR/firewall.sh" ;;
         selfheal)      bash "$MODULES_DIR/selfheal.sh" ;;
+        immune)        bash "$MODULES_DIR/immune.sh" "${2:-scan}" ;;
         status)        cmd_status ;;
         baseline)      cmd_baseline ;;
         deploy)        cmd_deploy ;;

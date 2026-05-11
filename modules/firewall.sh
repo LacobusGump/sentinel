@@ -204,7 +204,17 @@ check_macos_firewall() {
     # 9. Remote Login (SSH)
     local ssh_status
     if command -v systemsetup &>/dev/null; then
-        ssh_status=$(sudo systemsetup -getremotelogin 2>/dev/null || echo "unknown")
+        # Avoid sudo hang: check if we have cached sudo, if not fall back to lsof
+        if sudo -n true 2>/dev/null; then
+            ssh_status=$(sudo systemsetup -getremotelogin 2>/dev/null || echo "unknown")
+        else
+            # No sudo cached — check via lsof instead
+            if lsof -iTCP:22 -sTCP:LISTEN -P -n &>/dev/null 2>&1; then
+                ssh_status="On"
+            else
+                ssh_status="Off"
+            fi
+        fi
     else
         # Check if sshd is listening
         if lsof -iTCP:22 -sTCP:LISTEN -P -n &>/dev/null; then

@@ -173,8 +173,9 @@ AWS_REGION=us-east-1
 S3_BUCKET=acmecorp-prod-assets
 
 # Stripe
-STRIPE_SECRET_KEY=sk_FAKE_DECOY_NOT_REAL_00000000000000000000000000000000
-STRIPE_WEBHOOK_SECRET=whsec_FAKE_DECOY_NOT_REAL_0000000000000000
+# Payment processor keys (DECOY — these are fake honeypot values)
+PAYMENT_SECRET=rk_live_DECOY_51Hb3CmJw8z4qBc6vKx9nMpLr2tYuWxYz0000
+PAYMENT_WEBHOOK=whk_DECOY_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8
 STRIPE_PRICE_ID=price_1Hb3CmJw8z4qBc6v
 
 # Sendgrid
@@ -317,7 +318,7 @@ deploy_decoys() {
             else
                 mtime=$(stat -c %Y "$f" 2>/dev/null)
             fi
-            echo "${hash}  ${mtime}  ${f}" >> "$HASHES"
+            printf '%s\t%s\t%s\n' "$hash" "$mtime" "$f" >> "$HASHES"
         done
 
         # Stagger modification times to look natural
@@ -414,7 +415,7 @@ check_decoys_once() {
     fi
 
     local tampered=0
-    while IFS='  ' read -r orig_hash orig_mtime filepath; do
+    while IFS=$'\t' read -r orig_hash orig_mtime filepath; do
         if [[ ! -f "$filepath" ]]; then
             _alert "Decoy MISSING: ${filepath}"
             tampered=$((tampered + 1))

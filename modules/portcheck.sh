@@ -73,7 +73,7 @@ get_listening_ports() {
             local port bind_type
             port="${addr##*:}"
 
-            if [[ "$addr" == 127.0.0.1:* ]] || [[ "$addr" == "[::1]:*" ]] || [[ "$addr" == "localhost:"* ]]; then
+            if [[ "$addr" == 127.0.0.1:* ]] || [[ "$addr" == *"[::1]:"* ]] || [[ "$addr" == "localhost:"* ]]; then
                 bind_type="localhost"
             elif [[ "$addr" == "*:"* ]]; then
                 bind_type="all_interfaces"
